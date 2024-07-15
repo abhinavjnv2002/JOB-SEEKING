@@ -1,8 +1,9 @@
 import axios from "axios";
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import { useNavigate, useParams } from "react-router-dom";
 import { Context } from "../../main";
+
 const Application = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -12,8 +13,8 @@ const Application = () => {
   const [resume, setResume] = useState(null);
 
   const { isAuthorized, user } = useContext(Context);
-
   const navigateTo = useNavigate();
+  const { id } = useParams();
 
   // Function to handle file input changes
   const handleFileChange = (event) => {
@@ -21,9 +22,20 @@ const Application = () => {
     setResume(resume);
   };
 
-  const { id } = useParams();
+  useEffect(() => {
+    if (!isAuthorized || (user && user.role === "Employer")) {
+      navigateTo("/");
+    }
+  }, [isAuthorized, user, navigateTo]);
+
   const handleApplication = async (e) => {
     e.preventDefault();
+    
+    if (!resume) {
+      toast.error("Please select a resume file.");
+      return;
+    }
+
     const formData = new FormData();
     formData.append("name", name);
     formData.append("email", email);
@@ -41,7 +53,7 @@ const Application = () => {
           withCredentials: true,
           headers: {
             "Content-Type": "multipart/form-data",
-          },
+          }
         }
       );
       setName("");
@@ -49,17 +61,13 @@ const Application = () => {
       setCoverLetter("");
       setPhone("");
       setAddress("");
-      setResume("");
+      setResume(null); // Set resume to null instead of an empty string
       toast.success(data.message);
       navigateTo("/job/getall");
     } catch (error) {
       toast.error(error.response.data.message);
     }
   };
-
-  if (!isAuthorized || (user && user.role === "Employer")) {
-    navigateTo("/");
-  }
 
   return (
     <section className="application">
@@ -91,7 +99,7 @@ const Application = () => {
             onChange={(e) => setAddress(e.target.value)}
           />
           <textarea
-            placeholder="CoverLetter..."
+            placeholder="Cover Letter..."
             value={coverLetter}
             onChange={(e) => setCoverLetter(e.target.value)}
           />
