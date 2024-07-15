@@ -1,31 +1,37 @@
 import React, { useContext, useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
 import { Context } from "../../main";
+
 const JobDetails = () => {
   const { id } = useParams();
   const [job, setJob] = useState({});
   const navigateTo = useNavigate();
-
   const { isAuthorized, user } = useContext(Context);
 
   useEffect(() => {
-    axios
-      .get(`http://localhost:4000/api/v1/job/${id}`, {
-        withCredentials: true,
-      })
-      .then((res) => {
+    const fetchJobDetails = async () => {
+      try {
+        console.log(`Fetching job details for ID: ${id}`);
+        const res = await axios.get(`http://localhost:4000/api/v1/job/get/${id}`, {
+          withCredentials: true,
+        });
+        console.log('Job details fetched successfully:', res.data.job);
         setJob(res.data.job);
-      })
-      .catch((error) => {
+      } catch (error) {
+        console.error('Error fetching job details:', error);
         navigateTo("/notfound");
-      });
-  }, []);
+      }
+    };
 
-  if (!isAuthorized) {
-    navigateTo("/login");
-  }
+    fetchJobDetails();
+  }, [id, navigateTo]);
+
+  useEffect(() => {
+    if (!isAuthorized) {
+      navigateTo("/login");
+    }
+  }, [isAuthorized, navigateTo]);
 
   return (
     <section className="jobDetail page">
@@ -33,7 +39,7 @@ const JobDetails = () => {
         <h3>Job Details</h3>
         <div className="banner">
           <p>
-            Title: <span> {job.title}</span>
+            Title: <span>{job.title}</span>
           </p>
           <p>
             Category: <span>{job.category}</span>
